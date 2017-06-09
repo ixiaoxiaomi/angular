@@ -78,11 +78,11 @@ function coerceToAsyncValidator(asyncValidator?: AsyncValidatorFn | AsyncValidat
  */
 export abstract class AbstractControl<T = any> {
   /** @internal */
-  _value: T;
+  _value: T|null;
   /** @internal */
   _onCollectionChange = () => {};
 
-  private _valueChanges: EventEmitter<T>;
+  private _valueChanges: EventEmitter<T|null>;
   private _statusChanges: EventEmitter<any>;
   private _status: string;
   private _errors: ValidationErrors|null;
@@ -96,7 +96,7 @@ export abstract class AbstractControl<T = any> {
   /**
    * The value of the control.
    */
-  get value(): T { return this._value; }
+  get value(): T|null { return this._value; }
 
   /**
    * The parent control.
@@ -198,7 +198,7 @@ export abstract class AbstractControl<T = any> {
    * Emits an event every time the value of the control changes, in
    * the UI or programmatically.
    */
-  get valueChanges(): Observable<T> { return this._valueChanges; }
+  get valueChanges(): Observable<T|null> { return this._valueChanges; }
 
   /**
    * Emits an event every time the validation status of the control
@@ -466,7 +466,10 @@ export abstract class AbstractControl<T = any> {
    *
    * * `this.form.get(['person', 'name']);`
    */
-  get<GetT = any>(path: Array<string|number>|string): AbstractControl<GetT>|null {
+  get<GetT extends{[key: string]: any}|Array<string|number>|string|number = any>(
+      path: Array<string|number>|string): AbstractControl<GetT>|null {
+    // the union types here is the union of the possible types for FormGroup, FormArray and
+    // FormCotrol
     return _find(this, path, '.');
   }
 
@@ -631,7 +634,7 @@ export abstract class AbstractControl<T = any> {
  *
  * @stable
  */
-export class FormControl<T = any> extends AbstractControl<T|null> {
+export class FormControl<T = any> extends AbstractControl<T> {
   /** @internal */
   _onChange: Function[] = [];
   constructor(
@@ -840,7 +843,7 @@ export class FormControl<T = any> extends AbstractControl<T|null> {
  */
 export class FormGroup<T extends{[key: string]: any} = any> extends AbstractControl<T> {
   constructor(
-      public controls: {[key: string]: AbstractControl}, validator?: ValidatorFn|null,
+      public controls: {[key in keyof T]: AbstractControl<T[key]>}, validator?: ValidatorFn|null,
       asyncValidator?: AsyncValidatorFn|null) {
     super(validator || null, asyncValidator || null);
     this._initObservables();
@@ -1147,7 +1150,7 @@ export class FormGroup<T extends{[key: string]: any} = any> extends AbstractCont
  *
  * @stable
  */
-export class FormArray<T = any> extends AbstractControl<T[]> {
+export class FormArray<T = any> extends AbstractControl<T[]|any[]> {
   constructor(
       public controls: AbstractControl<T>[], validator?: ValidatorFn|null,
       asyncValidator?: AsyncValidatorFn|null) {
@@ -1346,7 +1349,7 @@ export class FormArray<T = any> extends AbstractControl<T[]> {
   /** @internal */
   _updateValue(): void {
     this._value = this.controls.filter((control) => control.enabled || this.disabled)
-                      .map((control) => control.value);
+                      .map((control) => control.value!);
   }
 
   /** @internal */
