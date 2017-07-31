@@ -989,7 +989,7 @@ export declare class HttpClient {
         body?: any;
         headers?: HttpHeaders;
         params?: HttpParams;
-        observe?: HttpObserve;
+        observe?: 'body' | 'events' | 'response';
         reportProgress?: boolean;
         responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
         withCredentials?: boolean;
